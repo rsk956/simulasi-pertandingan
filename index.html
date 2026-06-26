@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulasi Cerdas Fase Gugur Piala Dunia 2026</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f9fafb;
+    }
+
+    /* Scrollbar */
+    .scroll-container::-webkit-scrollbar {
+      height: 6px;
+    }
+    .scroll-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .scroll-container::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 10px;
+    }
+    .scroll-container::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    .scroll-container {
+      cursor: grab;
+    }
+    .scroll-container:active {
+      cursor: grabbing;
+    }
+
+    /* Custom Modern Selection */
+    .modern-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%239ca3af'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
+      background-position: right 0.5rem center;
+      background-repeat: no-repeat;
+      background-size: 1rem;
+    }
+    .modern-select:disabled {
+      background-image: none;
+      background-color: #f3f4f6;
+      color: #9ca3af;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body class="text-gray-800 min-h-screen flex flex-col">
+  <div id="app" class="flex flex-col min-h-screen w-full">
+
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+      <div class="max-w-[1400px] mx-auto px-4 h-14 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-7 h-7 bg-blue-600 rounded-md flex items-center justify-center shadow-inner">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          </div>
+          <div class="text-lg font-bold tracking-tight text-gray-900">
+            FIFA <span class="font-light text-gray-500">World Cup 26</span>
+          </div>
+        </div>
+        <button @click="resetData" class="text-[11px] font-bold bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-md transition-colors border border-red-100">
+          Reset Data
+        </button>
+      </div>
+    </header>
+
+    <main class="flex-grow flex flex-col w-full">
+      <div class="bg-white/90 backdrop-blur-md border-b border-gray-200 px-4 py-2.5 shadow-sm z-40 sticky top-14">
+        <div class="flex justify-center gap-2 max-w-3xl mx-auto">
+          <button v-for="tab in tabs" :key="tab.id"
+            @click="activeTab = tab.id"
+            :disabled="!canAccessTab(tab.id)"
+            :class="['px-5 py-1.5 rounded-full text-xs font-bold transition-all duration-300',
+            activeTab === tab.id ? 'bg-gray-900 text-white shadow-md' :
+            canAccessTab(tab.id) ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-gray-50 text-gray-400 cursor-not-allowed border border-gray-100']">
+            {{ tab.label }}
+          </button>
+        </div>
+      </div>
+
+      <div v-if="activeTab === 'grup'" class="max-w-[1400px] mx-auto p-4 w-full animate-fade-in flex-grow">
+
+        <div class="bg-blue-50/50 border border-blue-100 rounded-xl p-4 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
+          <div>
+            <h2 class="text-blue-900 font-bold text-sm">Klasemen Fase Grup Resmi</h2>
+            <p class="text-blue-700/80 text-xs mt-0.5">
+              Tentukan Juara, Runner-up, dan 8 grup peringkat ke-3.</p>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="bg-white px-3 py-1.5 rounded-lg border border-gray-200 text-xs">
+              Peringkat 3: <span :class="selectedThirdGroups.length === 8 ? 'text-green-600 font-bold' : 'text-amber-600 font-bold'">{{ selectedThirdGroups.length }}/8</span>
+            </div>
+            <button @click="generateBagan" :disabled="!isGroupStageComplete"
+              :class="['px-5 py-2 text-xs rounded-lg font-bold transition-all', isGroupStageComplete ? 'bg-blue-600 hover:bg-blue-700 text-white shadow shadow-blue-600/20' : 'bg-gray-200 text-gray-400 cursor-not-allowed']">
+              Generate Bagan &rarr;
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div v-for="grup in groupsData" :key="grup.grup" class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
+              <h3 class="font-bold text-gray-800 text-sm flex items-center gap-1.5">
+                <span class="w-6 h-6 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center text-xs font-black">G</span>
+                Grup {{ grup.grup }}
+              </h3>
+              <label class="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold text-gray-500 hover:text-gray-800 bg-gray-50 px-2 py-1 rounded border border-gray-100 transition-colors">
+                <input type="checkbox" :value="grup.grup" v-model="selectedThirdGroups" :disabled="selectedThirdGroups.length >= 8 && !selectedThirdGroups.includes(grup.grup)" class="w-3.5 h-3.5 rounded text-blue-600 accent-blue-600">
+                Lolos Peringkat 3
+              </label>
+            </div>
+
+            <div class="space-y-2.5">
+              <div class="flex items-center gap-2">
+                <span class="w-16 text-[10px] font-bold text-green-700 bg-green-50 px-1 py-1.5 rounded text-center border border-green-100">Posisi 1</span>
+                <select v-model="groupSelections[grup.grup].winner" class="modern-select flex-grow bg-white hover:bg-gray-50 border border-gray-300 rounded-md py-1.5 pl-2.5 pr-6 text-xs font-semibold text-gray-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-sm">
+                  <option value="">Pilih Juara</option>
+                  <option v-for="n in grup.negara" :key="n" :value="n">{{ n }}</option>
+                </select>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-16 text-[10px] font-bold text-blue-700 bg-blue-50 px-1 py-1.5 rounded text-center border border-blue-100">Posisi 2</span>
+                <select v-model="groupSelections[grup.grup].runnerUp" :disabled="!groupSelections[grup.grup].winner" class="modern-select flex-grow bg-white hover:bg-gray-50 border border-gray-300 rounded-md py-1.5 pl-2.5 pr-6 text-xs font-semibold text-gray-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-sm disabled:shadow-none">
+                  <option value="">Pilih Runner-up</option>
+                  <option v-for="n in grup.negara" :key="n" :value="n" :disabled="n === groupSelections[grup.grup].winner">{{ n }}</option>
+                </select>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-16 text-[10px] font-bold text-gray-600 bg-gray-100 px-1 py-1.5 rounded text-center border border-gray-200">Posisi 3</span>
+                <select v-model="groupSelections[grup.grup].third" :disabled="!groupSelections[grup.grup].runnerUp" class="modern-select flex-grow bg-white hover:bg-gray-50 border border-gray-300 rounded-md py-1.5 pl-2.5 pr-6 text-xs font-semibold text-gray-800 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-sm disabled:shadow-none">
+                  <option value="">Peringkat 3</option>
+                  <option v-for="n in grup.negara" :key="n" :value="n" :disabled="n === groupSelections[grup.grup].winner || n === groupSelections[grup.grup].runnerUp">{{ n }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="activeTab === 'bagan'" class="flex-grow w-full bg-[#f8fafc] overflow-hidden flex flex-col relative">
+        <div class="absolute bottom-4 right-4 z-10 bg-white/95 backdrop-blur px-4 py-2 border border-gray-200 rounded-lg shadow-lg text-[11px] text-gray-600 font-medium flex items-center gap-2 pointer-events-none">
+          <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+          Klik tim untuk meloloskan • Geser bagan ke kanan/kiri
+        </div>
+
+        <div id="scroll-container" class="scroll-container overflow-x-auto overflow-y-hidden w-full h-full flex-grow pt-6 pb-12 px-6">
+          <div class="flex w-max min-w-full items-center">
+
+            <template v-for="(round, rIndex) in roundsKeys" :key="round">
+
+              <div class="flex-none flex flex-col w-[180px]">
+                <div v-for="(match, mIndex) in bracket[round]" :key="match.id"
+                  class="flex flex-col justify-center relative w-full"
+                  :style="{ height: (64 * Math.pow(2, rIndex)) + 'px' }">
+
+                  <div class="absolute text-[8px] text-gray-400 font-bold text-center w-full tracking-wider" :style="{ top: 'calc(50% - 32px)' }">
+                    M{{ match.id }}
+                  </div>
+
+                  <div class="h-[48px] w-full bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow flex flex-col overflow-hidden relative z-10">
+                    <div class="absolute -left-1 top-0 bottom-0 w-1 bg-gray-300"></div>
+
+                    <div @click="selectMatchWinner(round, mIndex, match.team1)"
+                      class="flex-1 flex items-center px-2.5 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors select-none"
+                      :class="isMatchWinner(round, mIndex, match.team1) ? 'bg-blue-50/70 hover:bg-blue-50' : ''">
+                      <div class="w-3 h-3 mr-2 rounded-full border flex items-center justify-center transition-colors"
+                        :class="isMatchWinner(round, mIndex, match.team1) ? 'bg-blue-600 border-blue-600' : 'border-gray-300'">
+                        <svg v-if="isMatchWinner(round, mIndex, match.team1)" class="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                      </div>
+                      <img v-if="match.team1" :src="getFlag(match.team1)" class="w-[16px] h-[11px] mr-2 object-cover rounded-[1px] border border-gray-200" />
+                    <span class="text-[11px] font-semibold truncate" :class="match.team1 ? 'text-gray-800' : 'text-gray-400 italic font-medium'">
+                      {{ match.team1 || 'Menunggu...' }}
+                    </span>
+                  </div>
+
+                  <div @click="selectMatchWinner(round, mIndex, match.team2)"
+                    class="flex-1 flex items-center px-2.5 cursor-pointer hover:bg-gray-50 transition-colors select-none"
+                    :class="isMatchWinner(round, mIndex, match.team2) ? 'bg-blue-50/70 hover:bg-blue-50' : ''">
+                    <div class="w-3 h-3 mr-2 rounded-full border flex items-center justify-center transition-colors"
+                      :class="isMatchWinner(round, mIndex, match.team2) ? 'bg-blue-600 border-blue-600' : 'border-gray-300'">
+                      <svg v-if="isMatchWinner(round, mIndex, match.team2)" class="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <img v-if="match.team2" :src="getFlag(match.team2)" class="w-[16px] h-[11px] mr-2 object-cover rounded-[1px] border border-gray-200" />
+                  <span class="text-[11px] font-semibold truncate" :class="match.team2 ? 'text-gray-800' : 'text-gray-400 italic font-medium'">
+                    {{ match.team2 || 'Menunggu...' }}
+                  </span>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <div v-if="rIndex < roundsKeys.length - 1" class="flex-none flex flex-col w-[24px]">
+            <div v-for="i in (bracket[round].length / 2)" :key="'conn-'+i"
+              class="flex items-center justify-start relative w-full"
+              :style="{ height: (64 * Math.pow(2, rIndex + 1)) + 'px' }">
+              <div class="w-1/2 border-y-[1.5px] border-r-[1.5px] border-gray-300 rounded-r-md" :style="{ height: (64 * Math.pow(2, rIndex)) + 'px' }"></div>
+              <div class="w-1/2 h-0 border-t-[1.5px] border-gray-300"></div>
+            </div>
+          </div>
+
+        </template>
+
+        <div class="flex-none flex flex-col w-[160px] justify-center ml-2 relative">
+          <div class="absolute left-0 top-1/2 w-4 h-0 border-t-[1.5px] border-gray-300 transform -translate-x-full"></div>
+          <div class="bg-gradient-to-b from-gray-900 to-gray-800 border border-gray-700 rounded-xl shadow-xl p-4 text-center transform transition-transform hover:scale-105">
+            <div class="text-yellow-500 text-[9px] font-black uppercase tracking-widest mb-2 flex items-center justify-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+              CHAMPION
+            </div>
+            <div class="flex justify-center mb-2.5">
+              <img v-if="bracket.champion" :src="getFlag(bracket.champion)" class="w-12 h-8 object-cover rounded shadow border border-gray-600" />
+            <div v-else class="w-12 h-8 bg-gray-700 rounded flex items-center justify-center text-gray-400 text-xs font-bold">
+              ?
+            </div>
+          </div>
+          <div class="text-[13px] font-bold text-white truncate min-h-[18px]">
+            {{ bracket.champion || 'Belum Ada' }}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</main>
+</div>
+
+<script>
+const {
+createApp,
+ref,
+onMounted,
+watch,
+computed
+} = Vue;
+
+createApp( {
+setup() {
+const groupsData = [{
+grup: "A", negara: ["Meksiko", "Afrika Selatan", "Korea Selatan", "Republik Ceko"]
+},
+{
+grup: "B", negara: ["Kanada", "Bosnia dan Herzegovina", "Qatar", "Swiss"]
+},
+{
+grup: "C", negara: ["Brasil", "Maroko", "Haiti", "Skotlandia"]
+},
+{
+grup: "D", negara: ["Amerika Serikat", "Paraguay", "Australia", "Turki"]
+},
+{
+grup: "E", negara: ["Jerman", "Curaçao", "Pantai Gading", "Ekuador"]
+},
+{
+grup: "F", negara: ["Belanda", "Jepang", "Swedia", "Tunisia"]
+},
+{
+grup: "G", negara: ["Belgia", "Mesir", "Iran", "Selandia Baru"]
+},
+{
+grup: "H", negara: ["Spanyol", "Tanjung Verde", "Arab Saudi", "Uruguay"]
+},
+{
+grup: "I", negara: ["Prancis", "Senegal", "Irak", "Norwegia"]
+},
+{
+grup: "J", negara: ["Argentina", "Aljazair", "Austria", "Yordania"]
+},
+{
+grup: "K", negara: ["Portugal", "Rep. Dem. Kongo", "Uzbekistan", "Kolombia"]
+},
+{
+grup: "L", negara: ["Inggris", "Kroasia", "Ghana", "Panama"]
+}];
+
+const flagCodes = {
+"Meksiko": "mx", "Afrika Selatan": "za", "Korea Selatan": "kr", "Republik Ceko": "cz",
+"Kanada": "ca", "Bosnia dan Herzegovina": "ba", "Qatar": "qa", "Swiss": "ch",
+"Brasil": "br", "Maroko": "ma", "Haiti": "ht", "Skotlandia": "gb-sct",
+"Amerika Serikat": "us", "Paraguay": "py", "Australia": "au", "Turki": "tr",
+"Jerman": "de", "Curaçao": "cw", "Pantai Gading": "ci", "Ekuador": "ec",
+"Belanda": "nl", "Jepang": "jp", "Swedia": "se", "Tunisia": "tn",
+"Belgia": "be", "Mesir": "eg", "Iran": "ir", "Selandia Baru": "nz",
+"Spanyol": "es", "Tanjung Verde": "cv", "Arab Saudi": "sa", "Uruguay": "uy",
+"Prancis": "fr", "Senegal": "sn", "Irak": "iq", "Norwegia": "no",
+"Argentina": "ar", "Aljazair": "dz", "Austria": "at", "Yordania": "jo",
+"Portugal": "pt", "Rep. Dem. Kongo": "cd", "Uzbekistan": "uz", "Kolombia": "co",
+"Inggris": "gb-eng", "Kroasia": "hr", "Ghana": "gh", "Panama": "pa"
+};
+
+const getFlag = (teamName) => {
+const code = flagCodes[teamName];
+return code ? `https://flagcdn.com/w40/${code}.png`: '';
+};
+
+const tabs = [{
+id: 'grup', label: '1. Atur Fase Grup'
+},
+{
+id: 'bagan', label: '2. Simulasi Fase Gugur'
+}];
+
+const activeTab = ref('grup');
+const selectedThirdGroups = ref([]);
+
+const groupSelections = ref( {});
+groupsData.forEach(g => {
+groupSelections.value[g.grup] = {
+winner: '', runnerUp: '', third: ''
+};
+});
+
+const roundsKeys = ['r32', 'r16', 'r8', 'r4', 'final'];
+
+const defaultBracket = {
+r32: [{
+id: 74, team1: '', team2: ''
+}, {
+id: 77, team1: '', team2: ''
+}, // Block 1
+{
+id: 73, team1: '', team2: ''
+}, {
+id: 75, team1: '', team2: ''
+}, // Block 2
+{
+id: 83, team1: '', team2: ''
+}, {
+id: 84, team1: '', team2: ''
+}, // Block 3
+{
+id: 81, team1: '', team2: ''
+}, {
+id: 82, team1: '', team2: ''
+}, // Block 4
+{
+id: 76, team1: '', team2: ''
+}, {
+id: 78, team1: '', team2: ''
+}, // Block 5
+{
+id: 79, team1: '', team2: ''
+}, {
+id: 80, team1: '', team2: ''
+}, // Block 6
+{
+id: 86, team1: '', team2: ''
+}, {
+id: 88, team1: '', team2: ''
+}, // Block 7
+{
+id: 85, team1: '', team2: ''
+}, {
+id: 87, team1: '', team2: ''
+} // Block 8
+],
+r16: [{
+id: 89, team1: '', team2: ''
+}, {
+id: 90, team1: '', team2: ''
+},
+{
+id: 93, team1: '', team2: ''
+}, {
+id: 94, team1: '', team2: ''
+},
+{
+id: 91, team1: '', team2: ''
+}, {
+id: 92, team1: '', team2: ''
+},
+{
+id: 95, team1: '', team2: ''
+}, {
+id: 96, team1: '', team2: ''
+}],
+r8: Array.from({
+length: 4
+}, (_, i) => ({
+id: i+97, team1: '', team2: ''
+})),
+r4: Array.from({
+length: 2
+}, (_, i) => ({
+id: i+101, team1: '', team2: ''
+})),
+final: Array.from({
+length: 1
+}, (_, i) => ({
+id: 104, team1: '', team2: ''
+})),
+champion: ''
+};
+const bracket = ref(JSON.parse(JSON.stringify(defaultBracket)));
+
+const isGroupStageComplete = computed(() => {
+if (selectedThirdGroups.value.length !== 8) return false;
+for (let g of groupsData) {
+const sel = groupSelections.value[g.grup];
+if (!sel.winner || !sel.runnerUp || !sel.third) return false;
+}
+return true;
+});
+
+const canAccessTab = (tabId) => tabId === 'grup' || isGroupStageComplete.value;
+
+onMounted(() => {
+try {
+const t = localStorage.getItem('wc_v11_third'); if (t) selectedThirdGroups.value = JSON.parse(t);
+const g = localStorage.getItem('wc_v11_groups'); if (g) groupSelections.value = JSON.parse(g);
+const b = localStorage.getItem('wc_v11_bracket'); if (b) bracket.value = JSON.parse(b);
+const tab = localStorage.getItem('wc_v11_tab'); if (tab) activeTab.value = tab;
+} catch (e) {
+console.error(e);
+}
+initDragToScroll();
+});
+
+watch(selectedThirdGroups,
+(v) => localStorage.setItem('wc_v11_third', JSON.stringify(v)),
+{
+deep: true
+});
+watch(groupSelections,
+(v) => localStorage.setItem('wc_v11_groups', JSON.stringify(v)),
+{
+deep: true
+});
+watch(bracket,
+(v) => localStorage.setItem('wc_v11_bracket', JSON.stringify(v)),
+{
+deep: true
+});
+watch(activeTab,
+(v) => localStorage.setItem('wc_v11_tab', v));
+
+const generateBagan = () => {
+if (!isGroupStageComplete.value) return;
+const gs = groupSelections.value;
+const thirds = [...selectedThirdGroups.value].sort();
+
+// 1. Kamus Matriks Kombinasi Grup Resmi FIFA
+// Urutan index: 0(M74), 1(M77), 2(M81), 3(M82), 4(M79), 5(M80), 6(M85), 7(M87)
+const matrixConstraints = [
+['A',
+'B',
+'C',
+'D',
+'F'],
+// M74
+['C',
+'D',
+'F',
+'G',
+'H'],
+// M77
+['B',
+'E',
+'F',
+'I',
+'J'],
+// M81
+['A',
+'E',
+'H',
+'I',
+'J'],
+// M82
+['C',
+'E',
+'F',
+'H',
+'I'],
+// M79
+['E',
+'H',
+'I',
+'J',
+'K'],
+// M80
+['E',
+'F',
+'G',
+'I',
+'J'],
+// M85
+['D',
+'E',
+'I',
+'J',
+'L'] // M87
+];
+
+// Peta lokasi (Block 1-8) tempat Juara [0] dan Runner-up [1] dari setiap grup diletakkan
+const groupLocs = {
+'A': [6,
+2],
+'B': [8,
+2],
+'C': [5,
+2],
+'D': [4,
+7],
+'E': [1,
+5],
+'F': [2,
+5],
+'G': [4,
+7],
+'H': [3,
+7],
+'I': [1,
+5],
+'J': [7,
+3],
+'K': [8,
+3],
+'L': [6,
+3]
+};
+
+// Peta lokasi (Block 1-8) tempat ke-8 slot Peringkat 3 berada
+const slotB = [1,
+1,
+4,
+4,
+6,
+6,
+8,
+8];
+
+// Fungsi penentu Jarak Pertemuan di dalam pohon bagan (1=R16, 2=QF, 3=SF, 4=Final)
+const getDistance = (b1, b2) => {
+if (b1 === b2) return 1;
+if (Math.ceil(b1/2) === Math.ceil(b2/2)) return 2;
+if (Math.ceil(b1/4) === Math.ceil(b2/4)) return 3;
+return 4;
+};
+
+// 2. BACKTRACKING: Cari SEMUA kemungkinan distribusi yang sah menurut matriks FIFA
+let allValidPermutations = [];
+let used = new Array(8).fill(false);
+const backtrack = (idx, current) => {
+if (idx === 8) {
+allValidPermutations.push([...current]); return;
+}
+for (let i = 0; i < 8; i++) {
+if (!used[i] && matrixConstraints[idx].includes(thirds[i])) {
+used[i] = true;
+current.push(thirds[i]);
+backtrack(idx + 1, current);
+current.pop();
+used[i] = false;
+}
+}
+};
+backtrack(0, []);
+
+// 3. SCORING AI: Pilih distribusi dengan Jarak Pertemuan terjauh dari tim asalnya
+let bestPermutation = thirds;
+if (allValidPermutations.length > 0) {
+let bestScore = -1;
+for (let p of allValidPermutations) {
+let minDistance = 999;
+let sumDistance = 0;
+for (let i = 0; i < 8; i++) {
+let groupLetter = p[i];
+// Ukur jarak dari Posisi 3 ke Posisi 1 dan ke Posisi 2 di grup yang sama
+let d1 = getDistance(slotB[i], groupLocs[groupLetter][0]);
+let d2 = getDistance(slotB[i], groupLocs[groupLetter][1]);
+let d = Math.min(d1, d2);
+if (d < minDistance) minDistance = d;
+sumDistance += d;
+}
+// Prioritaskan jarak minimum terbesar. Jika seri, gunakan total jumlah jarak
+let score = (minDistance * 1000) + sumDistance;
+if (score > bestScore) {
+bestScore = score;
+bestPermutation = p;
+}
+}
+}
+
+const get3rd = (idx) => gs[bestPermutation[idx]] ? gs[bestPermutation[idx]].third: 'Peringkat 3';
+
+// Terapkan ke Bagan sesuai urutan visual kotak HTML
+bracket.value.r32[0].team1 = gs['E'].winner; bracket.value.r32[0].team2 = get3rd(0); // M74
+bracket.value.r32[1].team1 = gs['I'].winner; bracket.value.r32[1].team2 = get3rd(1); // M77
+bracket.value.r32[2].team1 = gs['A'].runnerUp; bracket.value.r32[2].team2 = gs['B'].runnerUp; // M73
+bracket.value.r32[3].team1 = gs['F'].winner; bracket.value.r32[3].team2 = gs['C'].runnerUp; // M75
+bracket.value.r32[4].team1 = gs['K'].runnerUp; bracket.value.r32[4].team2 = gs['L'].runnerUp; // M83
+bracket.value.r32[5].team1 = gs['H'].winner; bracket.value.r32[5].team2 = gs['J'].runnerUp; // M84
+bracket.value.r32[6].team1 = gs['D'].winner; bracket.value.r32[6].team2 = get3rd(2); // M81
+bracket.value.r32[7].team1 = gs['G'].winner; bracket.value.r32[7].team2 = get3rd(3); // M82
+bracket.value.r32[8].team1 = gs['C'].winner; bracket.value.r32[8].team2 = gs['F'].runnerUp; // M76
+bracket.value.r32[9].team1 = gs['E'].runnerUp; bracket.value.r32[9].team2 = gs['I'].runnerUp; // M78
+bracket.value.r32[10].team1 = gs['A'].winner; bracket.value.r32[10].team2 = get3rd(4); // M79
+bracket.value.r32[11].team1 = gs['L'].winner; bracket.value.r32[11].team2 = get3rd(5); // M80
+bracket.value.r32[12].team1 = gs['J'].winner; bracket.value.r32[12].team2 = gs['H'].runnerUp; // M86
+bracket.value.r32[13].team1 = gs['D'].runnerUp; bracket.value.r32[13].team2 = gs['G'].runnerUp; // M88
+bracket.value.r32[14].team1 = gs['B'].winner; bracket.value.r32[14].team2 = get3rd(6); // M85
+bracket.value.r32[15].team1 = gs['K'].winner; bracket.value.r32[15].team2 = get3rd(7); // M87
+
+roundsKeys.slice(1).forEach(r => {
+bracket.value[r].forEach(m => {
+m.team1 = ''; m.team2 = '';
+});
+});
+bracket.value.champion = '';
+
+activeTab.value = 'bagan';
+};
+
+const selectMatchWinner = (round, index, teamName) => {
+if (!teamName) return;
+
+let nextRound,
+nextIndex,
+isTeam1ForNext;
+if (round === 'r32') {
+nextRound = 'r16'; nextIndex = Math.floor(index / 2); isTeam1ForNext = index % 2 === 0;
+} else if (round === 'r16') {
+nextRound = 'r8'; nextIndex = Math.floor(index / 2); isTeam1ForNext = index % 2 === 0;
+} else if (round === 'r8') {
+nextRound = 'r4'; nextIndex = Math.floor(index / 2); isTeam1ForNext = index % 2 === 0;
+} else if (round === 'r4') {
+nextRound = 'final'; nextIndex = 0; isTeam1ForNext = index % 2 === 0;
+} else if (round === 'final') {
+bracket.value.champion = teamName; return;
+}
+
+if (nextRound) {
+if (isTeam1ForNext) bracket.value[nextRound][nextIndex].team1 = teamName;
+else bracket.value[nextRound][nextIndex].team2 = teamName;
+resetSubsequentMatches(nextRound, nextIndex, isTeam1ForNext);
+}
+};
+
+const resetSubsequentMatches = (round, index, isTeam1) => {
+let nextRound,
+nextIndex,
+isNextTeam1;
+if (round === 'r16') {
+nextRound = 'r8'; nextIndex = Math.floor(index / 2); isNextTeam1 = index % 2 === 0;
+} else if (round === 'r8') {
+nextRound = 'r4'; nextIndex = Math.floor(index / 2); isNextTeam1 = index % 2 === 0;
+} else if (round === 'r4') {
+nextRound = 'final'; nextIndex = 0; isNextTeam1 = index % 2 === 0;
+} else if (round === 'final') {
+bracket.value.champion = ''; return;
+}
+
+if (nextRound) {
+if (isNextTeam1) bracket.value[nextRound][nextIndex].team1 = '';
+else bracket.value[nextRound][nextIndex].team2 = '';
+resetSubsequentMatches(nextRound, nextIndex, isNextTeam1);
+}
+};
+
+const isMatchWinner = (round, index, teamName) => {
+if (!teamName) return false;
+let nextRound,
+nextIndex;
+if (round === 'r32') {
+nextRound = 'r16'; nextIndex = Math.floor(index / 2);
+} else if (round === 'r16') {
+nextRound = 'r8'; nextIndex = Math.floor(index / 2);
+} else if (round === 'r8') {
+nextRound = 'r4'; nextIndex = Math.floor(index / 2);
+} else if (round === 'r4') {
+nextRound = 'final'; nextIndex = 0;
+} else if (round === 'final') {
+return bracket.value.champion === teamName;
+}
+
+const nextMatch = bracket.value[nextRound][nextIndex];
+return index % 2 === 0 ? nextMatch.team1 === teamName: nextMatch.team2 === teamName;
+};
+
+const resetData = () => {
+if (confirm("Hapus semua data simulasi? Anda akan kembali ke pengaturan awal.")) {
+localStorage.clear();
+location.reload();
+}
+};
+
+const initDragToScroll = () => {
+const checkAndBindScroll = () => {
+const slider = document.getElementById('scroll-container');
+if (!slider) {
+setTimeout(checkAndBindScroll, 500); return;
+}
+let isDown = false,
+startX,
+scrollLeft;
+slider.addEventListener('mousedown', (e) => {
+isDown = true; slider.classList.add('cursor-grabbing'); startX = e.pageX - slider.offsetLeft; scrollLeft = slider.scrollLeft;
+});
+slider.addEventListener('mouseleave', () => {
+isDown = false; slider.classList.remove('cursor-grabbing');
+});
+slider.addEventListener('mouseup', () => {
+isDown = false; slider.classList.remove('cursor-grabbing');
+});
+slider.addEventListener('mousemove', (e) => {
+if (!isDown) return; e.preventDefault(); const x = e.pageX - slider.offsetLeft; slider.scrollLeft = scrollLeft - ((x - startX) * 1.5);
+});
+};
+checkAndBindScroll();
+};
+
+return {
+groupsData, tabs, activeTab, selectedThirdGroups, groupSelections, bracket, roundsKeys,
+isGroupStageComplete, canAccessTab, generateBagan, selectMatchWinner, isMatchWinner, resetData, getFlag
+};
+}
+}).mount('#app');
+</script>
+</body>
+</html>
